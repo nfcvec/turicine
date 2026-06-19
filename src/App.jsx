@@ -1,37 +1,90 @@
 function App() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-amber-100 via-orange-50 to-lime-100 text-slate-800">
-      <div className="absolute -left-16 top-8 h-64 w-64 rounded-full bg-orange-300/40 blur-3xl" />
-      <div className="absolute -right-10 bottom-10 h-72 w-72 rounded-full bg-lime-300/40 blur-3xl" />
+    <main className="festival-shell">
+      <div className="festival-noise" aria-hidden="true" />
 
-      <section className="relative mx-auto flex min-h-screen max-w-4xl items-center px-6 py-16">
-        <div className="w-full rounded-3xl border border-orange-200/80 bg-white/85 p-8 shadow-xl backdrop-blur sm:p-12">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700">
-            <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-            Estamos trabajando en algo para ti
+      <div className="festival-frame">
+        <header className="festival-topbar reveal-1">
+          <div className="brand">
+            <span className="brand-main">TURICINE</span>
+            <span className="brand-sub">FEST</span>
+          </div>
+          <nav className="festival-nav" aria-label="Menu principal">
+            <a href="#inicio">Inicio</a>
+            <a href="#sobre">Sobre</a>
+            <a href="#convocatoria">Convocatoria 2026</a>
+            <a href="#categorias">Categorias</a>
+            <a href="#premios">Premios</a>
+            <a href="#mas">Mas</a>
+          </nav>
+        </header>
+
+        <section className="hero" id="inicio">
+          <div className="hero-copy reveal-2">
+            <p className="edition-tag">Edicion 2026</p>
+            <h1>
+              Festival
+              <span>Turicine 2026</span>
+            </h1>
+            <p className="hero-description">
+              Cine curatorial latinoamericano y del Sur Global en Quito.
+              Encuentros, creacion y mirada cultural.
+            </p>
+            <p className="hero-date">5 al 15 de agosto 2026</p>
+            <div className="hero-actions">
+              <a className="btn btn-primary" href="#convocatoria">Postular pelicula</a>
+              <a className="btn btn-outline" href="#sobre">Conocer el festival</a>
+            </div>
           </div>
 
-          <h1 className="text-balance text-4xl font-black tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
-            Sitio en construccion
-          </h1>
+          <div className="hero-panel reveal-3" aria-hidden="true">
+            <div className="panel-cut panel-cut-red" />
+            <div className="panel-cut panel-cut-gold" />
+            <div className="panel-grid" />
+          </div>
+        </section>
 
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            Muy pronto tendras una nueva experiencia en Turicine. Gracias por tu
-            paciencia, estamos afinando cada detalle para recibirte.
+        <section className="paper-strip reveal-2" id="sobre">
+          <h2>Sobre el festival</h2>
+          <p>
+            Turicine impulsa cine de produccion curatorial, latinoamericana y del
+            Sur Global. Creamos un espacio para descubrir voces, formar publico y
+            conectar cultura con comunidad.
           </p>
+        </section>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-lime-200 bg-lime-50/70 p-4">
-              <p className="text-sm font-semibold text-lime-800">Avance actual</p>
-              <p className="mt-1 text-slate-700">Diseno y contenido en proceso.</p>
-            </div>
-            <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4">
-              <p className="text-sm font-semibold text-orange-800">Gracias por visitar</p>
-              <p className="mt-1 text-slate-700">Vuelve pronto para ver novedades.</p>
-            </div>
+        <section className="dates-block" id="convocatoria">
+          <h2 className="reveal-3">Fechas importantes</h2>
+          <div className="dates-grid">
+            <article className="date-card reveal-3">
+              <p className="date">15 mar 2026</p>
+              <p>Apertura de convocatoria</p>
+            </article>
+            <article className="date-card reveal-4">
+              <p className="date">15 may 2026</p>
+              <p>Fin de convocatoria</p>
+            </article>
+            <article className="date-card reveal-4">
+              <p className="date">8 jun 2026</p>
+              <p>Notificacion oficial</p>
+            </article>
+            <article className="date-card reveal-4">
+              <p className="date">5 - 15 ago 2026</p>
+              <p>Festival en Quito</p>
+            </article>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="category-strip" id="categorias">
+          <h2>Categorias competitivas 2026</h2>
+          <div className="category-list">
+            <span>Largometraje ficcion</span>
+            <span>Documental de autor</span>
+            <span>Cortometraje experimental</span>
+            <span>Nuevas voces andinas</span>
+          </div>
+        </section>
+      </div>
     </main>
   )
 }
