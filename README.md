@@ -15,12 +15,12 @@ The React Compiler is not enabled on this template because of its impact on dev 
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
-## Deploy automático a Cloudflare Pages
+## Deploy automatico a Cloudflare Pages
 
-Este repo incluye el workflow [`.github/workflows/pages-deploy.yml`](.github/workflows/pages-deploy.yml) para construir y publicar `dist` con GitHub Actions.
+Este repo incluye el workflow `.github/workflows/pages-deploy.yml` para construir y publicar `dist` con GitHub Actions.
 
-- Rama `main`: despliegue de **Producción**.
-- Rama `stage`: despliegue de **Pruebas (Preview)**.
+- Rama `main`: despliegue al proyecto `main-turicine`.
+- Rama `stage`: despliegue al proyecto `stage-turicine`.
 
 ### Secretos requeridos en GitHub
 
@@ -29,7 +29,10 @@ Configura estos secretos en el repositorio:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
-El proyecto de Pages objetivo es `turicine`.
+Proyectos de Pages usados por el workflow:
+
+- `main-turicine` (produccion)
+- `stage-turicine` (pruebas)
 
 ### Flujo recomendado
 
