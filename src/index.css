@@ -623,32 +623,110 @@ body {
   min-height: clamp(190px, 20vw, 250px);
 }
 
-.awards-cta {
-  min-width: min(620px, 100%);
-  min-height: 62px;
-  border-radius: 0.45rem;
-  border: 3px solid #fbc427;
-  background: linear-gradient(180deg, #0d122e, #0a0f25);
-  color: #f2f2f2;
+.public-vote-panel {
+  width: min(760px, 100%);
+  margin-top: 0.4rem;
+  border: 2px solid rgba(251, 196, 39, 0.9);
+  background:
+    linear-gradient(180deg, rgba(10, 16, 41, 0.94), rgba(7, 12, 34, 0.98));
+  box-shadow: 0 12px 28px rgba(1, 4, 15, 0.55);
+  border-radius: 0.5rem;
+  padding: clamp(1rem, 2.4vw, 1.5rem);
+}
+
+.public-vote-panel h3 {
+  margin: 0;
   font-family: 'Oswald', Impact, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: clamp(1.3rem, 3vw, 2.2rem);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  cursor: pointer;
-  box-shadow: 0 10px 24px rgba(2, 3, 10, 0.45);
-}
-
-.awards-cta span {
   color: #fbc427;
-  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(1.2rem, 2.8vw, 1.9rem);
+  text-align: center;
 }
 
-.awards-cta:hover {
-  transform: translateY(-1px);
+.public-vote-steps {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.public-vote-steps li {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  font-size: clamp(0.98rem, 2vw, 1.08rem);
+  line-height: 1.35;
+  color: #f4f6ff;
+}
+
+.public-vote-steps li::before {
+  counter-increment: public-vote-step;
+  content: counter(public-vote-step);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #101630;
+  background: linear-gradient(180deg, #fbc427, #d59b09);
+  box-shadow: inset 0 0 0 1px rgba(18, 16, 9, 0.45);
+}
+
+.public-vote-steps {
+  counter-reset: public-vote-step;
+}
+
+.public-vote-details {
+  margin-top: 0.85rem;
+  border-top: 1px solid rgba(251, 196, 39, 0.36);
+  padding-top: 0.72rem;
+}
+
+.public-vote-details summary {
+  cursor: pointer;
+  list-style: none;
+  width: fit-content;
+  font-weight: 700;
+  color: #dfe8ff;
+  letter-spacing: 0.01em;
+}
+
+.public-vote-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.public-vote-details summary::before {
+  content: '+';
+  display: inline-grid;
+  place-items: center;
+  width: 1.2rem;
+  margin-right: 0.35rem;
+  color: #fbc427;
+}
+
+.public-vote-details[open] summary::before {
+  content: '−';
+}
+
+.public-vote-details ul {
+  margin: 0.72rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+  color: rgba(242, 245, 255, 0.94);
+}
+
+.public-vote-details p {
+  margin: 0.85rem 0 0;
+  padding-top: 0.72rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+  color: rgba(231, 237, 255, 0.93);
+  line-height: 1.4;
 }
 
 .info-page {
@@ -1327,8 +1405,24 @@ body {
 
   .about-band {
     background-color: #000;
-    background-position: center top;
-    background-size: 300% auto;
+    background-position: center -0.25rem;
+    background-size: 345% auto;
+  }
+
+  .about-wrap {
+    padding: 1.05rem 0.65rem 1.3rem;
+    gap: 0.65rem;
+  }
+
+  .about-copy h2 {
+    font-size: 2.05rem;
+  }
+
+  .about-copy p {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.24;
+    max-width: 31ch;
   }
 
   .about-side {
@@ -1405,10 +1499,23 @@ body {
     font-size: 0.8rem;
   }
 
-  .awards-cta {
-    min-height: 56px;
-    font-size: 1.4rem;
-    width: 100%;
+  .public-vote-panel {
+    padding: 0.95rem;
+  }
+
+  .public-vote-panel h3 {
+    font-size: 1.25rem;
+  }
+
+  .public-vote-steps li {
+    grid-template-columns: 1.55rem 1fr;
+    font-size: 0.96rem;
+  }
+
+  .public-vote-steps li::before {
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 0.83rem;
   }
 
   .motif-strip {
@@ -1439,5 +1546,22 @@ body {
   .cta {
     min-height: 2.55rem;
     font-size: 0.92rem;
+  }
+}
+
+@media (min-width: 390px) and (max-width: 640px) {
+  .about-band {
+    background-position: center -1rem;
+    background-size: 325% auto;
+  }
+
+  .about-wrap {
+    padding: 1.15rem 0.85rem 1.35rem;
+  }
+
+  .about-copy p {
+    font-size: 1rem;
+    line-height: 1.28;
+    max-width: 34ch;
   }
 }

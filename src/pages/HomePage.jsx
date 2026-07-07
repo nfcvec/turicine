@@ -44,6 +44,18 @@ const premios = [
   },
 ]
 
+const pasosVotacion = [
+  'Sigue la cuenta oficial de TURICINE en Instagram.',
+  'Busca la publicacion de la pelicula o cortometraje y dale "Me gusta".',
+  'Comenta en esa misma publicacion el nombre de la pelicula o cortometraje.',
+]
+
+const criteriosValidacion = [
+  'El usuario sigue la cuenta oficial de TURICINE.',
+  'La publicacion correspondiente tiene el "Me gusta" del usuario.',
+  'Existe un comentario del usuario mencionando el nombre de la pelicula o cortometraje.',
+]
+
 const redes = [
   {
     name: 'Instagram',
@@ -142,9 +154,10 @@ function HomePage() {
           <article className="about-copy">
             <h2>Sobre el Festival</h2>
             <p>
-              El Festival Turicine, organizado por el Grupo Turicine, impulsa y difunde la produccion
-              cinematografica ecuatoriana, latinoamericana y del Sur Global. Buscamos expandirnos por
-              todo el pais e incentivar la formacion de publicos a traves del cine y la cultura.
+               El Festival TURICINE es una plataforma cultural dedicada a impulsar, exhibir y fortalecer el cine de ficción ecuatoriano, 
+               latinoamericano y del Sur Global. A través de proyecciones, actividades formativas y espacios de industria, promovemos el 
+               encuentro entre cineastas, instituciones, marcas y público, llevando nuestra visión de cine en todas partes, cine para todos a 
+               cada vez más territorios.
             </p>
           </article>
 
@@ -174,7 +187,7 @@ function HomePage() {
       </section>
 
       <section className="dates-section reveal-3" id="fechas">
-        <h2>Fechas importantes</h2>
+        <h2>Nuestro Camino al Festival</h2>
         <div className="dates-timeline">
           {fechasImportantes.map((item, index) => (
             <div
@@ -209,11 +222,27 @@ function HomePage() {
           ))}
         </div>
 
-        <button type="button" className="awards-cta">
-          <span aria-hidden="true">★</span>
-          Instrucciones para votar
-          <span aria-hidden="true">★</span>
-        </button>
+        <section className="public-vote-panel" aria-labelledby="public-vote-title">
+          <h3 id="public-vote-title">¿Cómo votar por el Premio del Publico?</h3>
+
+          <ol className="public-vote-steps" aria-label="Pasos para votar">
+            {pasosVotacion.map((paso) => (
+              <li key={paso}>{paso}</li>
+            ))}
+          </ol>
+
+          <details className="public-vote-details">
+            <summary>Ver criterios de validacion del voto</summary>
+            <ul>
+              {criteriosValidacion.map((criterio) => (
+                <li key={criterio}>{criterio}</li>
+              ))}
+            </ul>
+            <p>
+              Una vez verificados estos tres requisitos, el voto sera considerado valido para el conteo del Premio del Publico.
+            </p>
+          </details>
+        </section>
       </section>
     </main>
   )
