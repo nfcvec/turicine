@@ -46,13 +46,13 @@ const premios = [
 
 const pasosVotacion = [
   'Sigue la cuenta oficial de TURICINE en Instagram.',
-  'Busca la publicacion de la pelicula o cortometraje y dale "Me gusta".',
+  'Busca la publicacion de la pelicula o cortometraje y dale "Me gusta (❤️)".',
   'Comenta en esa misma publicacion el nombre de la pelicula o cortometraje.',
 ]
 
 const criteriosValidacion = [
   'El usuario sigue la cuenta oficial de TURICINE.',
-  'La publicacion correspondiente tiene el "Me gusta" del usuario.',
+  'La publicacion correspondiente tiene el "Me gusta (❤️)" del usuario.',
   'Existe un comentario del usuario mencionando el nombre de la pelicula o cortometraje.',
 ]
 
