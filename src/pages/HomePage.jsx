@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const fechasImportantes = [
@@ -14,7 +14,7 @@ const fechasImportantes = [
   },
   {
     date: '8 JUN 2026',
-    title: 'Notificacion oficial',
+    title: 'Notificación oficial',
     tone: 'is-cyan',
   },
   {
@@ -26,7 +26,7 @@ const fechasImportantes = [
 
 const premios = [
   {
-    title: 'Mejor pelicula',
+    title: 'Mejor película',
     tone: 'award-teal',
   },
   {
@@ -38,7 +38,7 @@ const premios = [
     tone: 'award-violet',
   },
   {
-    title: 'Voto del publico',
+    title: 'Voto del público',
     tone: 'award-blue',
     featured: true,
   },
@@ -46,14 +46,14 @@ const premios = [
 
 const pasosVotacion = [
   'Sigue la cuenta oficial de TURICINE en Instagram.',
-  'Busca la publicacion de la pelicula o cortometraje y dale "Me gusta (❤️)".',
-  'Comenta en esa misma publicacion el nombre de la pelicula o cortometraje.',
+  'Busca la publicación de la película o cortometraje y dale "Me gusta (❤️)".',
+  'Comenta en esa misma publicación el nombre de la película o cortometraje.',
 ]
 
 const criteriosValidacion = [
   'El usuario sigue la cuenta oficial de TURICINE.',
-  'La publicacion correspondiente tiene el "Me gusta (❤️)" del usuario.',
-  'Existe un comentario del usuario mencionando el nombre de la pelicula o cortometraje.',
+  'La publicación correspondiente tiene el "Me gusta (❤️)" del usuario.',
+  'Existe un comentario del usuario mencionando el nombre de la película o cortometraje.',
 ]
 
 const redes = [
@@ -77,6 +77,20 @@ const redes = [
 function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined
+
+    const closeMenuWithEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', closeMenuWithEscape)
+
+    return () => window.removeEventListener('keydown', closeMenuWithEscape)
+  }, [isMobileMenuOpen])
+
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
   }
@@ -96,7 +110,7 @@ function HomePage() {
             <button
               type="button"
               className="menu-toggle"
-              aria-label="Abrir menu"
+              aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="main-nav"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -115,10 +129,10 @@ function HomePage() {
             ))}
           </div>
 
-          <nav id="main-nav" className={`landing-nav ${isMobileMenuOpen ? 'is-open' : ''}`} aria-label="Menu principal">
+          <nav id="main-nav" className={`landing-nav ${isMobileMenuOpen ? 'is-open' : ''}`} aria-label="Menú principal">
             <a href="#home-principal" onClick={closeMobileMenu}>Inicio</a>
             <a href="#sobre" onClick={closeMobileMenu}>Sobre</a>
-            <Link to="/catalogo" onClick={closeMobileMenu}>Programacion 7ma edicion</Link>
+            <Link to="/catalogo" onClick={closeMobileMenu}>Programación 7ma edición</Link>
             <a href="#premios" onClick={closeMobileMenu}>Premios</a>
           </nav>
         </header>
@@ -154,10 +168,10 @@ function HomePage() {
           <article className="about-copy">
             <h2>Sobre el Festival</h2>
             <p>
-               El Festival TURICINE es una plataforma cultural dedicada a impulsar, exhibir y fortalecer el cine de ficción ecuatoriano, 
-               latinoamericano y del Sur Global. A través de proyecciones, actividades formativas y espacios de industria, promovemos el 
-               encuentro entre cineastas, instituciones, marcas y público, llevando nuestra visión de cine en todas partes, cine para todos a 
-               cada vez más territorios.
+              El Festival TURICINE es una plataforma cultural dedicada a impulsar, exhibir y fortalecer el cine de ficción ecuatoriano,
+              latinoamericano y del Sur Global. A través de proyecciones, actividades formativas y espacios de industria, promovemos el
+              encuentro entre cineastas, instituciones, marcas y público, llevando nuestra visión de cine en todas partes, cine para todos a
+              cada vez más territorios.
             </p>
           </article>
 
@@ -223,7 +237,7 @@ function HomePage() {
         </div>
 
         <section className="public-vote-panel" aria-labelledby="public-vote-title">
-          <h3 id="public-vote-title">¿Cómo votar por el Premio del Publico?</h3>
+          <h3 id="public-vote-title">¿Cómo votar por el Premio del Público?</h3>
 
           <ol className="public-vote-steps" aria-label="Pasos para votar">
             {pasosVotacion.map((paso) => (
@@ -232,18 +246,48 @@ function HomePage() {
           </ol>
 
           <details className="public-vote-details">
-            <summary>Ver criterios de validacion del voto</summary>
+            <summary>Ver criterios de validación del voto</summary>
             <ul>
               {criteriosValidacion.map((criterio) => (
                 <li key={criterio}>{criterio}</li>
               ))}
             </ul>
             <p>
-              Una vez verificados estos tres requisitos, el voto sera considerado valido para el conteo del Premio del Publico.
+              Una vez verificados estos tres requisitos, el voto será considerado válido para el conteo del Premio del Público.
             </p>
           </details>
         </section>
       </section>
+
+      <footer className="home-footer">
+        <div className="home-footer-main">
+          <div className="footer-brand">
+            <p>TURICINE</p>
+            <span>Festival de Cine de Quito · FECT26</span>
+          </div>
+
+          <div className="footer-contact">
+            <p>Contacto</p>
+            <a href="mailto:hola@turicine.com">hola@turicine.com</a>
+          </div>
+
+          <div className="footer-socials" aria-label="Redes sociales de Turicine">
+            <p>Síguenos</p>
+            <div>
+              {redes.map((red) => (
+                <a key={red.name} href={red.href} target="_blank" rel="noreferrer" aria-label={red.name}>
+                  <img src={red.icon} alt="" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="home-footer-bottom">
+          <p>© 2026 TURICINE. Todos los derechos reservados.</p>
+          <p>Cine en todas partes, cine para todos.</p>
+        </div>
+      </footer>
     </main>
   )
 }
