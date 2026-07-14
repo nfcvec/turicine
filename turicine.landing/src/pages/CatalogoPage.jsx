@@ -17,10 +17,10 @@ function CatalogoPage() {
   const [chipsOpen, setChipsOpen] = useState(false)
   const [selected, setSelected] = useState(null)
   const [whereOpen, setWhereOpen] = useState(false)
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
-    setLoading(true)
     fetchCatalog(controller.signal)
       .then((data) => {
         const cats = data?.categories ?? []
@@ -64,6 +64,7 @@ function CatalogoPage() {
 
   const handleSelect = (movie) => {
     setSelected(movie)
+    setSynopsisExpanded(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -99,7 +100,26 @@ function CatalogoPage() {
             {heroDuration && <span>{heroDuration}</span>}
             {featured.directors && <span>{featured.directors}</span>}
           </p>
-          {featured.synopsis && <p className="hero-description">{featured.synopsis}</p>}
+          {featured.synopsis && (
+            <div className="hero-synopsis">
+              <p
+                id="hero-synopsis-text"
+                className={`hero-description ${synopsisExpanded ? 'is-expanded' : ''}`}
+              >
+                {featured.synopsis}
+              </p>
+              <button
+                type="button"
+                className="hero-synopsis-toggle"
+                onClick={() => setSynopsisExpanded((expanded) => !expanded)}
+                aria-expanded={synopsisExpanded}
+                aria-controls="hero-synopsis-text"
+                aria-label={synopsisExpanded ? 'Contraer sinopsis' : 'Ver sinopsis completa'}
+              >
+                <span aria-hidden="true">⌄</span>
+              </button>
+            </div>
+          )}
           <div className="hero-actions">
             <button type="button" className="cta info" onClick={() => setWhereOpen(true)}>
               Dónde ver

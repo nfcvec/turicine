@@ -1474,6 +1474,54 @@ body {
   overflow: hidden;
 }
 
+.hero-description.is-expanded {
+  display: block;
+  max-height: 12rem;
+  overflow-y: auto;
+  padding-right: 0.65rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(214, 172, 52, 0.7) rgba(255, 255, 255, 0.08);
+}
+
+.hero-synopsis {
+  display: grid;
+  justify-items: start;
+  gap: 0.15rem;
+}
+
+.hero-synopsis-toggle {
+  width: 2rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.hero-synopsis-toggle span {
+  display: block;
+  font-size: 1.8rem;
+  line-height: 0.7;
+  transition: transform 180ms ease;
+}
+
+.hero-synopsis-toggle[aria-expanded='true'] span {
+  transform: rotate(180deg);
+}
+
+.hero-synopsis-toggle:hover {
+  color: #fff;
+}
+
+.hero-synopsis-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+
 .hero-chip {
   margin: 0;
   font-size: 0.86rem;
