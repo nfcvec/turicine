@@ -1,0 +1,138 @@
+name: Build and Push
+
+on:
+  push:
+    branches:
+      - "main"
+      - "stage"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Derive image tag from branch
+      run: |
+        BRANCH_TAG=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
+        IMAGE_NAMESPACE=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+
+        echo "IMAGE_REGISTRY=ghcr.io" >> "$GITHUB_ENV"
+        echo "IMAGE_NAMESPACE=${IMAGE_NAMESPACE}" >> "$GITHUB_ENV"
+        echo "IMAGE_TAG=${BRANCH_TAG}" >> "$GITHUB_ENV"
+
+        echo "Using IMAGE_REGISTRY=ghcr.io"
+        echo "Using IMAGE_NAMESPACE=${IMAGE_NAMESPACE}"
+        echo "Using IMAGE_TAG=${BRANCH_TAG}"
+
+    - name: Build Docker images
+      env:
+        REGISTRY: ghcr.io
+        REPOSITORY: ${{ env.IMAGE_NAMESPACE }}
+        BRANCH: ${{ env.IMAGE_TAG }}
+        BUILD_ID: latest
+      run: docker compose build
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push Docker images
+      env:
+        REGISTRY: ghcr.io
+        REPOSITORY: ${{ env.IMAGE_NAMESPACE }}
+        BRANCH: ${{ env.IMAGE_TAG }}
+        BUILD_ID: latest
+      run: docker compose push
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    environment: ${{ github.ref_name }}
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Normalize repo name
+      run: |
+        IMAGE_NAMESPACE=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+        REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]' | cut -d'/' -f2)
+        echo "Using IMAGE_NAMESPACE=${IMAGE_NAMESPACE}"
+        echo "Using REPO_NAME=${REPO_NAME}"
+        echo "IMAGE_NAMESPACE=${IMAGE_NAMESPACE}" >> "$GITHUB_ENV"
+        echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
+
+    - name: Normalize branch name
+      run: |
+        IMAGE_TAG=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
+        echo "Using IMAGE_TAG=${IMAGE_TAG}"
+        echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+    - name: Copy to ~/{branch}-{repo_name}
+      run: |
+        if [ -f ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env ]; then
+          cp ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak
+        fi
+
+        rm -rf ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
+        mkdir -p ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
+        cp -r ${{ github.workspace }}/. ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/
+
+        if [ -f /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak ]; then
+          mv /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        fi
+
+    - name: Set env variables from secrets
+      run: |
+        touch ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+
+        if [ ! -s ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env ] && [ ! -z "${{ secrets.ENV_VARS }}" ]; then
+          echo "${{ secrets.ENV_VARS }}" > ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        fi
+
+        sed -i '/^IMAGE_REGISTRY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^IMAGE_NAMESPACE=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^IMAGE_TAG=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^REGISTRY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^REPOSITORY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^BRANCH=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^BUILD_ID=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        sed -i '/^COMPOSE_PROJECT_NAME=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+
+        echo "REGISTRY=ghcr.io" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        echo "REPOSITORY=${{ env.IMAGE_NAMESPACE }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        echo "BRANCH=${{ env.IMAGE_TAG }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        echo "BUILD_ID=latest" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        echo "COMPOSE_PROJECT_NAME=${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+
+    - name: Pull and restart
+      run: |
+        cd ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
+
+        export REGISTRY="ghcr.io"
+        export REPOSITORY="${{ env.IMAGE_NAMESPACE }}"
+        export BRANCH="${{ env.IMAGE_TAG }}"
+        export BUILD_ID="latest"
+
+        docker compose down --remove-orphans
+        docker compose pull
+        docker compose up -d

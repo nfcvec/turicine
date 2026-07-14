@@ -1,0 +1,8 @@
+bin/
+obj/
+# Secrets never go in the image; runtime config comes from env vars.
+appsettings.json
+appsettings.*.json
+!appsettings.example.json
+Dockerfile
+.dockerignore

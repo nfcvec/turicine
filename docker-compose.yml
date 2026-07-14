@@ -1,0 +1,50 @@
+services:
+  catalogo:
+    image: ${REGISTRY:-ghcr.io}/${REPOSITORY:-nfcvec/turicine}/catalogo:${BUILD_ID:-latest}-${BRANCH:-local}
+    build:
+      context: ./turicine.catalogo
+      dockerfile: Dockerfile
+    # No se publican puertos: el proxy principal (externo) enruta hacia el contenedor.
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection:-}
+      CloudflareImages__AccountId: ${CloudflareImages__AccountId:-}
+      CloudflareImages__ApiToken: ${CloudflareImages__ApiToken:-}
+      CloudflareImages__DeliveryBaseUrl: ${CloudflareImages__DeliveryBaseUrl:-}
+      Keycloak__Authority: ${Keycloak__Authority:-}
+      Keycloak__Audience: ${Keycloak__Audience:-}
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
+
+  panel:
+    image: ${REGISTRY:-ghcr.io}/${REPOSITORY:-nfcvec/turicine}/panel:${BUILD_ID:-latest}-${BRANCH:-local}
+    build:
+      context: ./turicine.catalogo.panel
+      dockerfile: Dockerfile
+    environment:
+      # Same-origin: nginx proxies /api and /odata to the catalogo service.
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+      VITE_IMAGES_BASE_URL: ${VITE_IMAGES_BASE_URL:-}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-druk}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-turicine-web}
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      - catalogo
+    restart: unless-stopped
+
+  web:
+    image: ${REGISTRY:-ghcr.io}/${REPOSITORY:-nfcvec/turicine}/web:${BUILD_ID:-latest}-${BRANCH:-local}
+    build:
+      context: ./turicine.landing
+      dockerfile: Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      - catalogo
+    restart: unless-stopped
