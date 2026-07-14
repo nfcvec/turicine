@@ -732,6 +732,7 @@ body {
 }
 
 .home-footer {
+  --footer-gold: #d6ac34;
   border-top: 1px solid rgba(251, 196, 39, 0.3);
   background:
     radial-gradient(circle at 12% 0, rgba(251, 196, 39, 0.08), transparent 28%),
@@ -739,12 +740,75 @@ body {
   color: #f5f5f5;
 }
 
+.sponsor-strip,
 .home-footer-main,
 .home-footer-bottom {
   width: min(100%, 1180px);
   margin: 0 auto;
   padding-right: clamp(1rem, 2vw, 2rem);
   padding-left: clamp(1rem, 2vw, 2rem);
+}
+
+.sponsor-strip {
+  padding-top: 1.3rem;
+  padding-bottom: 0.6rem;
+}
+
+.sponsor-strip-title {
+  margin: 0 0 0.8rem;
+  font-family: 'Oswald', Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.74rem;
+  color: var(--footer-gold);
+}
+
+.sponsor-marquee {
+  display: flex;
+  gap: 1.4rem;
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.sponsor-track {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: sponsor-scroll 32s linear infinite;
+}
+
+.sponsor-marquee:hover .sponsor-track {
+  animation-play-state: paused;
+}
+
+.sponsor-item {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 62px;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  border-radius: 0.5rem;
+}
+
+.sponsor-logo {
+  height: 42px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+}
+
+@keyframes sponsor-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - 1.4rem)); }
 }
 
 .home-footer-main {
@@ -760,7 +824,7 @@ body {
 .footer-contact p,
 .footer-socials > p {
   margin: 0;
-  color: #fbc427;
+  color: var(--footer-gold);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1859,6 +1923,11 @@ body {
     gap: 1.4rem;
   }
 
+  .sponsor-strip {
+    padding-top: 1.5rem;
+    padding-bottom: 1.2rem;
+  }
+
   .home-footer-bottom {
     align-items: flex-start;
     flex-direction: column;
@@ -2071,6 +2140,11 @@ body {
     min-height: 2.55rem;
     font-size: 0.92rem;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-track { animation: none; }
+  .sponsor-marquee { overflow-x: auto; }
 }
 
 @media (min-width: 390px) and (max-width: 640px) {
@@ -2456,71 +2530,4 @@ body {
   border: 1px solid rgba(220, 60, 60, 0.4);
   color: #ffb4b4;
   font-size: 0.88rem;
-}
-
-/* ── Footer: carrusel de auspiciantes ───────────────────────────────── */
-.sponsor-strip {
-  padding: 1.3rem clamp(1rem, 3vw, 2rem) 0.6rem;
-}
-
-.sponsor-strip-title {
-  margin: 0 0 0.8rem;
-  font-family: 'Oswald', Impact, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.74rem;
-  color: #d6ac34;
-}
-
-.sponsor-marquee {
-  display: flex;
-  gap: 1.4rem;
-  overflow: hidden;
-  width: 100%;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-}
-
-.sponsor-track {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 1.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  animation: sponsor-scroll 32s linear infinite;
-}
-
-.sponsor-marquee:hover .sponsor-track {
-  animation-play-state: paused;
-}
-
-.sponsor-item {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 62px;
-  padding: 0.5rem 0.9rem;
-  background: #fff;
-  border-radius: 0.5rem;
-}
-
-.sponsor-logo {
-  height: 42px;
-  width: auto;
-  max-width: 160px;
-  object-fit: contain;
-  display: block;
-}
-
-@keyframes sponsor-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(calc(-100% - 1.4rem)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sponsor-track { animation: none; }
-  .sponsor-marquee { overflow-x: auto; }
 }
