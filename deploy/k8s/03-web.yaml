@@ -1,0 +1,40 @@
+# Landing de turicine (estatico, sin config de runtime).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels: { app.kubernetes.io/name: web, app.kubernetes.io/part-of: turicine }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: web }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: web, app.kubernetes.io/part-of: turicine }
+    spec:
+      enableServiceLinks: false
+      imagePullSecrets: [{ name: ghcr-pull }]
+      containers:
+        - name: web
+          image: ghcr.io/nfcvec/turicine/web:latest-__IMAGE_TAG__
+          imagePullPolicy: Always
+          ports: [{ name: http, containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 5m, memory: 16Mi }
+            limits:   { memory: 64Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels: { app.kubernetes.io/name: web, app.kubernetes.io/part-of: turicine }
+spec:
+  selector: { app.kubernetes.io/name: web }
+  ports: [{ name: http, port: 8080, targetPort: http }]

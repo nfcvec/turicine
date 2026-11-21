@@ -1,0 +1,58 @@
+# API del catalogo (.NET). Una replica. La imagen no trae curl ni wget y no hay
+# endpoint de health conocido: se usa tcpSocket (si la configuracion es
+# invalida la app aborta antes de abrir el puerto).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogo
+  labels: { app.kubernetes.io/name: catalogo, app.kubernetes.io/part-of: turicine }
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels: { app.kubernetes.io/name: catalogo }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: catalogo, app.kubernetes.io/part-of: turicine }
+    spec:
+      enableServiceLinks: false
+      # La connection string usa Host=postgres02, que el DNS del cluster no resuelve.
+      hostAliases:
+        - ip: 192.168.100.93
+          hostnames: [postgres02]
+      imagePullSecrets: [{ name: ghcr-pull }]
+      containers:
+        - name: catalogo
+          image: ghcr.io/nfcvec/turicine/catalogo:latest-__IMAGE_TAG__
+          imagePullPolicy: Always
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - { name: ASPNETCORE_ENVIRONMENT, valueFrom: { configMapKeyRef: { name: turicine-config, key: ASPNETCORE_ENVIRONMENT } } }
+            - { name: ConnectionStrings__DefaultConnection, valueFrom: { secretKeyRef: { name: turicine-secrets, key: CONNECTIONSTRINGS__DEFAULTCONNECTION } } }
+            - { name: CloudflareImages__AccountId, valueFrom: { configMapKeyRef: { name: turicine-config, key: CLOUDFLAREIMAGES__ACCOUNTID } } }
+            - { name: CloudflareImages__DeliveryBaseUrl, valueFrom: { configMapKeyRef: { name: turicine-config, key: CLOUDFLAREIMAGES__DELIVERYBASEURL } } }
+            - { name: CloudflareImages__ApiToken, valueFrom: { secretKeyRef: { name: turicine-secrets, key: CLOUDFLAREIMAGES__APITOKEN } } }
+            - { name: Keycloak__Authority, valueFrom: { configMapKeyRef: { name: turicine-config, key: KEYCLOAK__AUTHORITY } } }
+            - { name: Keycloak__Audience, valueFrom: { configMapKeyRef: { name: turicine-config, key: KEYCLOAK__AUDIENCE } } }
+          readinessProbe:
+            tcpSocket: { port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogo
+  labels: { app.kubernetes.io/name: catalogo, app.kubernetes.io/part-of: turicine }
+spec:
+  selector: { app.kubernetes.io/name: catalogo }
+  ports: [{ name: http, port: 8080, targetPort: http }]

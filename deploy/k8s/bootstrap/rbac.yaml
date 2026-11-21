@@ -1,0 +1,65 @@
+# Se aplica UNA vez por un administrador del cluster (el workflow no puede:
+# su identidad esta acotada a este namespace).
+#   kubectl --context kube-poc apply -f deploy/k8s/bootstrap/
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: turicine-stage
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-deployer
+  namespace: turicine-stage
+---
+# Token de larga vida de la ServiceAccount, para el kubeconfig del Secret
+# KUBE_CONFIG del Environment de GitHub. Rotar = borrar este Secret, reaplicar
+# y regenerar KUBE_CONFIG.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-deployer-token
+  namespace: turicine-stage
+  annotations:
+    kubernetes.io/service-account.name: github-deployer
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-deployer
+  namespace: turicine-stage
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets", "services"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: ["apps"]
+  resources: ["replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: ["traefik.io"]
+  resources: ["ingressroutes"]
+  verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deployer
+  namespace: turicine-stage
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-deployer
+subjects:
+- kind: ServiceAccount
+  name: github-deployer
+  namespace: turicine-stage

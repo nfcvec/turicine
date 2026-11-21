@@ -65,74 +65,99 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
+    # Mismo modelo que el despliegue de Debora: el runner no necesita kubectl
+    # instalado ni sesion contra el cluster, solo ruta de red al API.
+    # KUBE_CONFIG (Secret del Environment, base64) es el kubeconfig de la
+    # ServiceAccount github-deployer, acotada al namespace del ambiente
+    # (deploy/k8s/bootstrap/rbac.yaml). Variables y Secrets se leen del
+    # Environment, se validan contra .env.example y se pasan a kubectl por
+    # descriptores en memoria: nada de config ni secretos toca disco.
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v4
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        version: v1.34.1
 
-    - name: Normalize repo name
+    - name: Apply config, manifests and roll out
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        VARS_JSON: ${{ toJSON(vars) }}
+        SECRETS_JSON: ${{ toJSON(secrets) }}
       run: |
-        IMAGE_NAMESPACE=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
-        REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]' | cut -d'/' -f2)
-        echo "Using IMAGE_NAMESPACE=${IMAGE_NAMESPACE}"
-        echo "Using REPO_NAME=${REPO_NAME}"
-        echo "IMAGE_NAMESPACE=${IMAGE_NAMESPACE}" >> "$GITHUB_ENV"
-        echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
+        set -euo pipefail
+        command -v jq >/dev/null || { echo "::error::jq no está instalado en el runner"; exit 1; }
+        [ -n "$KUBE_CONFIG" ] || { echo "::error::falta el Secret KUBE_CONFIG en el Environment '${GITHUB_REF_NAME}'"; exit 1; }
+        [ -f .env.example ] || { echo "::error::el repo no versiona .env.example: sin contrato no se despliega"; exit 1; }
 
-    - name: Normalize branch name
-      run: |
+        # La rama determina el ambiente
+        case "${GITHUB_REF_NAME}" in
+          stage) KUBE_NAMESPACE=turicine-stage ;;
+          *) echo "::error::la rama '${GITHUB_REF_NAME}' no tiene namespace en el cluster"; exit 1 ;;
+        esac
         IMAGE_TAG=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
-        echo "Using IMAGE_TAG=${IMAGE_TAG}"
-        echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
 
-    - name: Copy to ~/{branch}-{repo_name}
-      run: |
-        if [ -f ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env ]; then
-          cp ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak
+        # kubeconfig en memoria: cada llamada recibe un descriptor nuevo
+        k() { KUBECONFIG=<(printf '%s' "$KUBE_CONFIG" | base64 --decode) kubectl -n "$KUBE_NAMESPACE" "$@"; }
+
+        k get deploy >/dev/null \
+          || { echo "::error::el runner no alcanza el API del cluster o el kubeconfig no es válido"; exit 1; }
+
+        REQUIRED=$(sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env.example \
+                   | tr '[:lower:]' '[:upper:]' | sort -u | tr '\n' ' ')
+
+        # Calculadas por el pipeline o metadata de Actions: no van al cluster
+        RESERVED="REGISTRY REPOSITORY IMAGE_TAG IMAGE_REGISTRY IMAGE_NAMESPACE
+                  COMPOSE_PROJECT_NAME GITHUB_TOKEN KUBE_CONFIG
+                  BRANCH BUILD_ID CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN
+                  ACTIONS_ID_TOKEN_REQUEST_TOKEN ACTIONS_ID_TOKEN_REQUEST_URL"
+
+        # 1) Contrato: toda clave requerida existe en Variables o Secrets
+        if ! CHECK=$(jq -rn \
+              --argjson vars "$VARS_JSON" \
+              --argjson secrets "$SECRETS_JSON" \
+              --arg required "$REQUIRED" \
+              --arg reserved "$RESERVED" '
+          def words: split("\\s+"; null) | map(select(length > 0));
+          def up: with_entries(.key |= ascii_upcase);
+          ($vars | up) as $v | ($secrets | up) as $s
+          | ($reserved | words | map({(.): true}) | add // {}) as $res
+          | ($required | words | map(select($res[.] != true))
+             | map(select((($v[.] // $s[.]) // "") == ""))) as $missing
+          | ([$v, $s] | map(to_entries[]) | map(select(.value | tostring | test("[\r\n]")) | .key)) as $multiline
+          | if   ($missing   | length) > 0 then error("no declara \($missing | join(" "))")
+            elif ($multiline | length) > 0 then error("valores multilínea no caben en un env-file: \($multiline | join(" "))")
+            else "ok" end' 2>&1); then
+          echo "::error::Environment '${GITHUB_REF_NAME}' — $(sed 's/^jq: error ([^)]*): //' <<<"$CHECK")"
+          exit 1
         fi
 
-        rm -rf ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
-        mkdir -p ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
-        cp -r ${{ github.workspace }}/. ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/
+        # 2) Variables -> ConfigMap, Secrets -> Secret, vía /dev/fd (sin archivos)
+        render() {
+          jq -rn --argjson src "$1" --arg reserved "$RESERVED" '
+            def words: split("\\s+"; null) | map(select(length > 0));
+            ($reserved | words | map({(.): true}) | add // {}) as $res
+            | $src | with_entries(.key |= ascii_upcase)
+            | to_entries | map(select(.value != "" and ($res[.key] != true)))
+            | sort_by(.key) | .[] | "\(.key)=\(.value)"'
+        }
+        echo "Variables -> ConfigMap: $(render "$VARS_JSON" | cut -d= -f1 | tr '\n' ' ')"
+        echo "Secrets   -> Secret:    $(render "$SECRETS_JSON" | cut -d= -f1 | tr '\n' ' ')"
 
-        if [ -f /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak ]; then
-          mv /tmp/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}.env.bak ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        fi
+        k create configmap turicine-config --from-env-file=<(render "$VARS_JSON") \
+          --dry-run=client -o yaml | k apply -f -
+        k create secret generic turicine-secrets --from-env-file=<(render "$SECRETS_JSON") \
+          --dry-run=client -o yaml | k apply -f -
 
-    - name: Set env variables from secrets
-      run: |
-        touch ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        # 3) Manifiestos (sin valores): placeholders de tag y hosts
+        var() { jq -r --arg n "$1" 'with_entries(.key |= ascii_upcase) | .[$n] // empty' <<<"$VARS_JSON"; }
 
-        if [ ! -s ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env ] && [ ! -z "${{ secrets.ENV_VARS }}" ]; then
-          echo "${{ secrets.ENV_VARS }}" > ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        fi
+        manifest() {
+          sed -e "s|__IMAGE_TAG__|${IMAGE_TAG}|g" "$1"
+        }
 
-        sed -i '/^IMAGE_REGISTRY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^IMAGE_NAMESPACE=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^IMAGE_TAG=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^REGISTRY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^REPOSITORY=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^BRANCH=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^BUILD_ID=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        sed -i '/^COMPOSE_PROJECT_NAME=/d' ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
+        for f in deploy/k8s/01-catalogo.yaml deploy/k8s/02-panel.yaml deploy/k8s/03-web.yaml deploy/k8s/04-ingressroute.yaml; do manifest "$f" | k apply -f -; done
 
-        echo "REGISTRY=ghcr.io" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        echo "REPOSITORY=${{ env.IMAGE_NAMESPACE }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        echo "BRANCH=${{ env.IMAGE_TAG }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        echo "BUILD_ID=latest" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-        echo "COMPOSE_PROJECT_NAME=${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}" >> ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}/.env
-
-    - name: Pull and restart
-      run: |
-        cd ~/${{ env.IMAGE_TAG }}-${{ env.REPO_NAME }}
-
-        export REGISTRY="ghcr.io"
-        export REPOSITORY="${{ env.IMAGE_NAMESPACE }}"
-        export BRANCH="${{ env.IMAGE_TAG }}"
-        export BUILD_ID="latest"
-
-        docker compose down --remove-orphans
-        docker compose pull
-        docker compose up -d
+        # Tags mutables con imagePullPolicy: Always: reiniciar recrea el pod con la imagen nueva
+        k rollout restart deployment/catalogo deployment/panel deployment/web
+        k rollout status deployment/catalogo --timeout=300s
+        k rollout status deployment/panel --timeout=300s
+        k rollout status deployment/web --timeout=300s
