@@ -1,5 +1,5 @@
 # Panel del catalogo (SPA). entrypoint.sh materializa config.js con estas
-# variables. VITE_API_BASE_URL es opcional: vacio (misma origen) es el valor correcto.
+# variables.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +21,9 @@ spec:
           imagePullPolicy: Always
           ports: [{ name: http, containerPort: 8080 }]
           env:
-            - { name: VITE_API_BASE_URL, valueFrom: { configMapKeyRef: { name: turicine-config, key: VITE_API_BASE_URL, optional: true } } }
+            # Vacio = misma origen. Se define siempre (aunque vacio): el entrypoint solo
+            # escribe en config.js las VITE_* que existen en el entorno del contenedor.
+            - { name: VITE_API_BASE_URL, value: "" }
             - { name: VITE_IMAGES_BASE_URL, valueFrom: { configMapKeyRef: { name: turicine-config, key: VITE_IMAGES_BASE_URL } } }
             - { name: VITE_KEYCLOAK_URL, valueFrom: { configMapKeyRef: { name: turicine-config, key: VITE_KEYCLOAK_URL } } }
             - { name: VITE_KEYCLOAK_REALM, valueFrom: { configMapKeyRef: { name: turicine-config, key: VITE_KEYCLOAK_REALM } } }
